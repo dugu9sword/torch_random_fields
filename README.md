@@ -8,13 +8,10 @@
 
 The key features include:
 
-- Easy to plug into your research code
-- Batch/GPU support for any random field with arbitary binary connections
-- Fast training/inference with top-K logits, do not worry about too large label space
-
-:star: Given a length-`100` linear-chain CRF (tested on my MacBook i7), you can achieve:
-- **training**: up to `10` times speed up in the training stage with `pseudo-likelihood`, compared with `MLE`.
-- **inference**: up to `2` times speed up with `mean field variational inference`, compared with Viterbi decoding.
+- Easy to **plug** into your research code
+- Support for **batch** acceleration of any random field with arbitary **binary** or **ternary** connections on the **GPU**
+- Fast training/inference with **top-K** logits, do not worry about too large label space
+- Support for **context-aware** transition matrix and **low-rank** factorization
 
 ## Cases
 
