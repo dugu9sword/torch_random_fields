@@ -71,8 +71,7 @@ Ising model (or Potts model) is widely used in statistical physics and computati
 
 ### Sampling
 
-- Not implemented yet since I am lazy
-
+- [x] Gibbs Sampling
 
 
 ## Acknowledgement
