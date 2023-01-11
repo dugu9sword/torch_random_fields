@@ -133,7 +133,7 @@ class GeneralCRF(torch.nn.Module):
                 # unary
                 norm_unary = beam_unary_potentials.log_softmax(-1)
                 gold_unary = norm_unary[:, :, 0]
-                # gold_unary.masked_fill_(~masks, 0.)
+                gold_unary = gold_unary.masked_fill(~masks, 0.)
                 pll = gold_unary.sum(-1)
                 # binary
                 norm_bin_phis = chain(
@@ -143,7 +143,7 @@ class GeneralCRF(torch.nn.Module):
                     lambda __: einops.rearrange(__, "B E (K1 K2) -> B E K1 K2", K1=self.beam_size, K2=self.beam_size),
                 )
                 gold_bin_phis = norm_bin_phis[:, :, 0, 0]
-                # gold_bin_phis.masked_fill_(~binary_masks, 0.)
+                gold_bin_phis = gold_bin_phis.masked_fill(~binary_masks, 0.)
                 pll = pll + gold_bin_phis.sum(-1)
                 # ternary
                 if self.support_ternary:
@@ -154,7 +154,7 @@ class GeneralCRF(torch.nn.Module):
                         lambda __: einops.rearrange(__, "B E (K1 K2 K3) -> B E K1 K2 K3", K1=self.beam_size, K2=self.beam_size, K3=self.beam_size),
                     )
                     gold_ter_phis = norm_ter_phis[:, :, 0, 0, 0]
-                    # gold_ter_phis.masked_fill_(~ternary_masks, 0.0)
+                    gold_ter_phis = gold_ter_phis.masked_fill(~ternary_masks, 0.0)
                     pll = pll + gold_ter_phis.sum(-1)
                 # nll
                 nll = -(pll / masks.sum(-1)).mean()
