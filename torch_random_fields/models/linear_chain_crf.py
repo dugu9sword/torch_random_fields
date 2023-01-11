@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops.layers.torch import Rearrange
-from .constants import Inference, Training
+from .constants import Inference, Learning
 
 from ..utils.misc import chain, einsumx
 
@@ -18,7 +18,7 @@ class LinearChainCRF(torch.nn.Module):
         low_rank=32,
         beam_size=64,
         feature_size: Optional[int] = None,
-        training: str = Training.PIECEWISE,
+        learning: str = Learning.PIECEWISE,
         inference: str = Inference.VITERBI,
     ):
         super().__init__()
@@ -26,11 +26,11 @@ class LinearChainCRF(torch.nn.Module):
         self.low_rank = low_rank
         self.beam_size = beam_size
         self.feature_size = feature_size
-        self.training = training
+        self.learning = learning
         self.inference = inference
 
-        assert self.training in (Training.EXACT_LIKELIHOOD, Training.PERCEPTRON,\
-            Training.PIECEWISE, Training.PSEUDO_LIKELIHOOD)
+        assert self.learning in (Learning.EXACT_LIKELIHOOD, Learning.PERCEPTRON,\
+            Learning.PIECEWISE, Learning.PSEUDO_LIKELIHOOD)
         assert self.inference in (Inference.VITERBI, Inference.BATCH_MEAN_FIELD)
 
         self.E1 = nn.Embedding(num_states, low_rank)
@@ -79,7 +79,7 @@ class LinearChainCRF(torch.nn.Module):
             beam_transition_score2,
         )
 
-        if self.training == Training.EXACT_LIKELIHOOD:
+        if self.learning == Learning.EXACT_LIKELIHOOD:
             # compute logP
             numerator = self._compute_score(unaries, targets, masks, return_potential=False)
 
@@ -98,7 +98,7 @@ class LinearChainCRF(torch.nn.Module):
             ll = numerator - denominator
             nll = -(ll / masks.sum(-1)).mean()
             return nll
-        elif self.training == Training.PERCEPTRON:
+        elif self.learning == Learning.PERCEPTRON:
             """
             structured perceptron is a type of structural svm (w/o regularization):
             supposing y'=argmax_s, y* is ground truth. (s'>=s*)
@@ -114,7 +114,7 @@ class LinearChainCRF(torch.nn.Module):
             delta = 1 + pred_scores - gold_scores
             loss = (delta / masks.sum(-1)).mean()
             return loss
-        if self.training == Training.PIECEWISE:
+        if self.learning == Learning.PIECEWISE:
             # normalize logits in a beam, use the gold [:, :, 0, 0] to compute cross entropy
             norm_beam_node_phi = beam_node_phi.log_softmax(dim=-1)
             node_gold_phi = norm_beam_node_phi[:, :, 0].masked_fill(~masks, 0.0)
@@ -134,7 +134,7 @@ class LinearChainCRF(torch.nn.Module):
             ll = node_gold_phi.sum(-1) + edge_gold_phi.sum(-1)
             nll = -(ll / masks.sum(-1)).mean()
             return nll
-        elif self.training == Training.PSEUDO_LIKELIHOOD:
+        elif self.learning == Learning.PSEUDO_LIKELIHOOD:
             norm_beam_node_phi = beam_node_phi.log_softmax(dim=-1)
             node_gold_phi = norm_beam_node_phi[:, :, 0].masked_fill(~masks, 0.0)
 

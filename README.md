@@ -44,7 +44,7 @@ Ising model (or Potts model) is widely used in statistical physics and computati
 
 ## Features
 
-### Training
+### Learning
 
 - **Linear-Chain CRF**: 
   - [x] maximum likelihood estimation

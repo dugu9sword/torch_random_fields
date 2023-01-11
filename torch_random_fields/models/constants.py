@@ -1,4 +1,4 @@
-class Training:
+class Learning:
     EXACT_LIKELIHOOD = "exact-likelihood"
     PSEUDO_LIKELIHOOD = "pseudo-likelihood"
     PIECEWISE = "piecewise"

@@ -10,7 +10,7 @@ from ..utils.batch_lbp import batch_index_select, batch_lbp
 from ..utils.loopy_belief_propagation import loopy_belief_propagation
 from ..utils.misc import batch_pad, chain, einsumx
 from ..utils.naive_mean_field import naive_mean_field
-from .constants import Inference, Training
+from .constants import Inference, Learning
 
 
 class GeneralCRF(torch.nn.Module):
@@ -21,13 +21,13 @@ class GeneralCRF(torch.nn.Module):
         beam_size=64,
         support_ternary: bool = False,
         feature_size: Optional[int] = None,
-        training: str = Training.PIECEWISE,
+        learning: str = Learning.PIECEWISE,
         inference: str = Inference.BATCH_BELIEF_PROPAGATION,
     ) -> None:
         super().__init__()
-        assert training in (
-            Training.PIECEWISE,
-            Training.PERCEPTRON,
+        assert learning in (
+            Learning.PIECEWISE,
+            Learning.PERCEPTRON,
         )
         assert inference in (
             Inference.MEAN_FIELD,
@@ -35,15 +35,15 @@ class GeneralCRF(torch.nn.Module):
             Inference.BATCH_BELIEF_PROPAGATION,
         )
         if support_ternary:
-            assert training == Training.PIECEWISE and \
+            assert learning == Learning.PIECEWISE and \
                  inference == Inference.BELIEF_PROPAGATION, \
-            f"only training={Training.PIECEWISE} and inference={Inference.BELIEF_PROPAGATION} supports ternary potentials!"
+            f"only learning={Learning.PIECEWISE} and inference={Inference.BELIEF_PROPAGATION} supports ternary potentials!"
 
         self.num_states = num_states
         self.low_rank = low_rank
         self.beam_size = beam_size
         self.feature_size = feature_size
-        self.training = training
+        self.learning = learning
         self.inference = inference
         self.support_ternary = support_ternary
 
@@ -129,7 +129,7 @@ class GeneralCRF(torch.nn.Module):
             ter_phis = None
 
         if targets is not None:
-            if self.training == Training.PIECEWISE:
+            if self.learning == Learning.PIECEWISE:
                 # unary
                 norm_unary = beam_unary_potentials.log_softmax(-1)
                 gold_unary = norm_unary[:, :, 0]
@@ -159,7 +159,7 @@ class GeneralCRF(torch.nn.Module):
                 # nll
                 nll = -(pll / masks.sum(-1)).mean()
                 return nll
-            elif self.training == Training.PERCEPTRON:
+            elif self.learning == Learning.PERCEPTRON:
                 # raise NotImplemented
                 _, pred_idx = self(
                     unaries=unaries,
