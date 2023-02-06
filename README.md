@@ -13,6 +13,21 @@ The key features include:
 - Fast training/inference with **top-K** logits, do not worry about too large label space
 - Support for **context-aware** transition matrix and **low-rank** factorization
 
+
+You may cite this project by:
+
+```
+@inproceedings{
+  wang2022regularized,
+  title={Regularized Molecular Conformation Fields},
+  author={Lihao Wang and Yi Zhou and Yiqun Wang and Xiaoqing Zheng and Xuanjing Huang and Hao Zhou},
+  booktitle={Advances in Neural Information Processing Systems},
+  editor={Alice H. Oh and Alekh Agarwal and Danielle Belgrave and Kyunghyun Cho},
+  year={2022},
+  url={https://openreview.net/forum?id=7XCFxnG8nGS}
+}
+```
+
 ## Cases
 
 ### Linear-Chain CRF
