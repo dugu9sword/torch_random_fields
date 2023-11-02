@@ -81,7 +81,7 @@ class LinearChainCRF(torch.nn.Module):
 
         if self.learning == Learning.EXACT_LIKELIHOOD:
             # compute logP
-            numerator = self._compute_score(unaries, targets, masks, return_potential=False)
+            numerator = self._compute_score(unaries, targets, masks, node_features=node_features, return_potential=False)
 
             # compute logZ
             score = unaries[:, 0]  # B x K
@@ -109,8 +109,8 @@ class LinearChainCRF(torch.nn.Module):
               = 1+s'-s*
             """
             _, predictions = self._decode(unaries=unaries, masks=masks, node_features=node_features)
-            pred_scores = self._compute_score(unaries, predictions, masks, return_potential=False)
-            gold_scores = self._compute_score(unaries, targets, masks, return_potential=False)
+            pred_scores = self._compute_score(unaries, predictions, masks, node_features=node_features, return_potential=False)
+            gold_scores = self._compute_score(unaries, targets, masks, node_features=node_features, return_potential=False)
             delta = 1 + pred_scores - gold_scores
             loss = (delta / masks.sum(-1)).mean()
             return loss
@@ -259,14 +259,25 @@ class LinearChainCRF(torch.nn.Module):
         else:
             raise NotImplementedError
 
-    def _compute_score(self, unaries, paths, masks, return_potential=False):
+    def _compute_score(self, unaries, paths, masks, node_features=None, return_potential=False):
+        batch_size, seq_len = unaries.size()[:2]
+        if node_features is not None:
+            # B x (T-1) x D x D
+            edge_wise = self.edge_potential(torch.cat([node_features[:, :-1, :], node_features[:, 1:, :]], dim=-1))  
+        else:
+            edge_wise = torch.eye(self.low_rank, device=unaries.device)
+            edge_wise = edge_wise.expand(batch_size, seq_len - 1, self.low_rank, self.low_rank)
+
         # unary
         unaries = unaries.gather(-1, paths.unsqueeze(-1)).squeeze(-1)
         unaries = unaries * masks
         # binary
         left = self.E1(paths[:, :-1])
         right = self.E2(paths[:, 1:])
-        binaries = (left * right).sum(-1)
+        binaries = einsumx(
+            "B T D1, B T D1 D2, B T D2 -> B T",
+            left, edge_wise, right,
+        )
         binaries = binaries * masks[:, 1:]
 
         if return_potential:
